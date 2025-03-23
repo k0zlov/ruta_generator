@@ -55,11 +55,10 @@ class RutaBuilder implements Builder {
               element.constructors.first;
 
           final dependencies = constructor.parameters.map((param) {
-            final type = param.type.toString();
             if (param.isNamed) {
-              return '${param.name}: getIt<$type>()';
+              return '${param.name}: getIt()';
             } else {
-              return 'getIt<$type>()';
+              return 'getIt()';
             }
           }).join(', ');
 
