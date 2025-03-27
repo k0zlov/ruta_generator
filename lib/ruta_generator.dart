@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:glob/glob.dart';
@@ -11,15 +14,41 @@ class RutaBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
+    final mainAssetId = AssetId(buildStep.inputId.package, 'lib/main.dart');
+    final bool hasEntrypoint = await buildStep.canRead(mainAssetId);
+    LibraryElement? library;
+    bool hasRun = false;
+    bool hasInit = false;
+
+    if (hasEntrypoint) {
+      final isLib = await buildStep.resolver.isLibrary(mainAssetId);
+      if (!isLib) {
+        throw Exception('lib/main.dart must be a valid Dart library.');
+      }
+
+      library = await buildStep.resolver.libraryFor(mainAssetId);
+      hasRun = library.topLevelElements.any(
+        (e) =>
+            e.name == 'run' && e is FunctionElement && e.parameters.length == 3,
+      );
+      hasInit = library.topLevelElements
+          .any((e) => e.name == 'init' && e is FunctionElement);
+    }
+
     final routes = <String>[];
     final imports = <String>{
       "'package:ruta/ruta.dart'",
       "'dart:io'",
       "'package:get_it/get_it.dart'",
-      "'package:${buildStep.inputId.package}/main.dart' as entrypoint",
       "'package:ruta/open_api.dart'",
       "'package:shelf_swagger_ui/shelf_swagger_ui.dart'",
     };
+
+    if (hasEntrypoint) {
+      imports.add(
+        "'package:${buildStep.inputId.package}/main.dart' as entrypoint",
+      );
+    }
 
     final assetIds = await buildStep.findAssets(Glob('lib/**.dart')).toList();
     for (final assetId in assetIds) {
@@ -82,7 +111,37 @@ class RutaBuilder implements Builder {
     buffer
       ..writeln()
       ..writeln('final getIt = GetIt.instance;')
-      ..writeln()
+      ..writeln();
+
+    if (hasEntrypoint) {
+      if (!hasRun) {
+        buffer
+          ..writeln('// Warning: run method not found in main.dart')
+          ..writeln(
+            '// Please add this method to lib/main.dart with the following signature:',
+          )
+          ..writeln(
+            '// Future<HttpServer> run(Handler Function() createRouter, InternetAddress address, int port) {...}',
+          )
+          ..writeln();
+      }
+
+      if (!hasInit) {
+        buffer
+          ..writeln('// Warning: init method not found in main.dart')
+          ..writeln(
+            '// Please add this method to lib/main.dart with the following signature:',
+          )
+          ..writeln('// Future<void> init() {...}')
+          ..writeln();
+      }
+    } else {
+      buffer.writeln(
+        '// Warning: file lib/main.dart was not find',
+      );
+    }
+
+    buffer
       ..writeln('Handler createRouter() {')
       ..writeln('  final router = Router();')
       ..writeln('  try {')
@@ -103,7 +162,9 @@ class RutaBuilder implements Builder {
       ..writeln('    try {')
       ..writeln('      spec = getIt.get<OpenApiSpec>();')
       ..writeln('    } catch (e) {')
-      ..writeln(r"      print('No OpenApiSpec registered in getIt: $e');")
+      ..writeln(
+        "      print('Register OpenApiSpec class inside getIt to have openapi documentation');",
+      )
       ..writeln('    }')
       ..writeln()
       ..writeln('    if (spec != null) {')
@@ -124,15 +185,27 @@ class RutaBuilder implements Builder {
       ..writeln()
       ..writeln(
         'Future<HttpServer> createServer(InternetAddress address, int port) {',
-      )
-      ..writeln('  return entrypoint.run(createRouter, address, port);')
+      );
+
+    if (hasEntrypoint) {
+      buffer.writeln('  return entrypoint.run(createRouter, address, port);');
+    } else {
+      buffer.writeln('  return defaultRutaRun(createRouter, address, port);');
+    }
+
+    buffer
       ..writeln('}')
       ..writeln()
       ..writeln('void main() async {')
-      ..writeln('  getIt.allowReassignment = true;')
-      ..writeln('  await entrypoint.init();')
+      ..writeln('  getIt.allowReassignment = true;');
+
+    if (hasEntrypoint) {
+      buffer.writeln('  await entrypoint.init();');
+    }
+
+    buffer
       ..writeln()
-      ..writeln('  bool isFirstLaunch = true;') // Local flag for first launch
+      ..writeln('  bool isFirstLaunch = true;')
       ..writeln()
       ..writeln('  hotReload(() async {')
       ..writeln(
