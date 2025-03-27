@@ -49,8 +49,7 @@ class RutaBuilder implements Builder {
       );
     }
 
-    final routeDefinitions =
-        <String, List<String>>{};
+    final routeDefinitions = <String, List<String>>{};
 
     final assetIds = await buildStep.findAssets(Glob('lib/**.dart')).toList();
     for (final assetId in assetIds) {
@@ -127,32 +126,31 @@ class RutaBuilder implements Builder {
       ..writeln('final getIt = GetIt.instance;')
       ..writeln();
 
-    if (hasEntrypoint) {
-      if (!hasRun) {
-        buffer
-          ..writeln('// Warning: run method not found in main.dart')
-          ..writeln(
-            '// Please add this method to lib/main.dart with the following signature:',
-          )
-          ..writeln(
-            '// Future<HttpServer> run(Handler Function() createRouter, InternetAddress address, int port) {...}',
-          )
-          ..writeln();
-      }
-
-      if (!hasInit) {
-        buffer
-          ..writeln('// Warning: init method not found in main.dart')
-          ..writeln(
-            '// Please add this method to lib/main.dart with the following signature:',
-          )
-          ..writeln('// Future<void> init() {...}')
-          ..writeln();
-      }
-    } else {
+    if (!hasEntrypoint) {
       buffer.writeln(
         '// Warning: file lib/main.dart was not found',
       );
+    }
+    if (!hasInit) {
+      buffer
+        ..writeln('// Warning: init method not found in main.dart')
+        ..writeln(
+          '// Please add this method to lib/main.dart with the following signature:',
+        )
+        ..writeln('// Future<void> init() {...}')
+        ..writeln();
+    }
+
+    if (!hasRun) {
+      buffer
+        ..writeln('// Warning: run method not found in main.dart')
+        ..writeln(
+          '// Please add this method to lib/main.dart with the following signature:',
+        )
+        ..writeln(
+          '// Future<HttpServer> run(Handler Function() handlerCallback, InternetAddress address, int port) {...}',
+        )
+        ..writeln();
     }
 
     buffer
@@ -218,7 +216,7 @@ class RutaBuilder implements Builder {
         'Future<HttpServer> createServer(InternetAddress address, int port) {',
       );
 
-    if (hasEntrypoint) {
+    if (hasRun) {
       buffer.writeln('  return entrypoint.run(createRouter, address, port);');
     } else {
       buffer.writeln('  return defaultRutaRun(createRouter, address, port);');
@@ -230,7 +228,7 @@ class RutaBuilder implements Builder {
       ..writeln('void main() async {')
       ..writeln('  getIt.allowReassignment = true;');
 
-    if (hasEntrypoint) {
+    if (hasInit) {
       buffer.writeln('  await entrypoint.init();');
     }
 
