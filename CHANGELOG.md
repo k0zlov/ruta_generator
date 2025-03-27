@@ -1,3 +1,7 @@
+## 0.1.4
+
+- Fixing entrypoint checking
+
 ## 0.1.3
 
 - Adding support for ruta: 0.1.4
