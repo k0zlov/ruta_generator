@@ -1,8 +1,7 @@
 import 'dart:async';
-
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
-import 'package:collection/collection.dart' show IterableExtension;
+import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 
 /// Builder for generating Ruta routes
@@ -50,6 +49,9 @@ class RutaBuilder implements Builder {
       );
     }
 
+    final routeDefinitions =
+        <String, List<String>>{};
+
     final assetIds = await buildStep.findAssets(Glob('lib/**.dart')).toList();
     for (final assetId in assetIds) {
       if (!await buildStep.canRead(assetId)) {
@@ -96,6 +98,18 @@ class RutaBuilder implements Builder {
               : '$className($dependencies)';
 
           routes.add(routeInstance);
+
+          final endpointGetters = element.accessors
+              .where(
+                (accessor) =>
+                    accessor.isGetter &&
+                    accessor.returnType.element?.name == 'Endpoint' &&
+                    accessor.returnType.element?.library?.name == 'ruta',
+              )
+              .map((getter) => getter.name)
+              .toList();
+
+          routeDefinitions[routeInstance] = endpointGetters;
         }
       }
     }
@@ -137,18 +151,35 @@ class RutaBuilder implements Builder {
       }
     } else {
       buffer.writeln(
-        '// Warning: file lib/main.dart was not find',
+        '// Warning: file lib/main.dart was not found',
       );
     }
 
     buffer
       ..writeln('Handler createRouter() {')
       ..writeln('  final router = Router();')
-      ..writeln('  try {')
-      ..writeln('    final routes = <Route>[');
+      ..writeln('  try {');
 
+    int count = 1;
+    final List<String> routeNames = [];
     for (final routeInstance in routes) {
-      buffer.writeln('      $routeInstance,');
+      final List<String> endpoints = routeDefinitions[routeInstance]!;
+      final String className = 'route${count++}';
+      routeNames.add(className);
+
+      buffer
+        ..writeln('    final $className = $routeInstance;')
+        ..writeln('    $className.endpoints = [');
+      for (final endpoint in endpoints) {
+        buffer.writeln('      $className.$endpoint,');
+      }
+      buffer.writeln('    ];');
+    }
+
+    buffer.writeln('    final routes = <Route>[');
+
+    for (final name in routeNames) {
+      buffer.writeln('      $name,');
     }
 
     buffer
