@@ -1,3 +1,7 @@
+## 0.1.5
+
+- Adding support for @Named arguments in Route constructor
+
 ## 0.1.4
 
 - Fixing entrypoint checking

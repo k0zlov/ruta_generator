@@ -85,11 +85,26 @@ class RutaBuilder implements Builder {
               element.constructors.first;
 
           final dependencies = constructor.parameters.map((param) {
+            String result;
+
             if (param.isNamed) {
-              return '${param.name}: getIt()';
+              result = '${param.name}: getIt(';
             } else {
-              return 'getIt()';
+              result = 'getIt(';
             }
+
+            final ElementAnnotation? elementAnnotation =
+                param.metadata.firstWhereOrNull(
+              (s) => s.element?.displayName == 'Named',
+            );
+
+            if (elementAnnotation == null) return '$result)';
+
+            final constantValue = elementAnnotation.computeConstantValue();
+
+            final nameValue = constantValue?.getField('name')?.toStringValue();
+
+            return '${result}instanceName:"$nameValue")';
           }).join(', ');
 
           final routeInstance = dependencies.isEmpty
