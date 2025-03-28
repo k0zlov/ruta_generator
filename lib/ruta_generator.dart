@@ -88,9 +88,9 @@ class RutaBuilder implements Builder {
             String result;
 
             if (param.isNamed) {
-              result = '${param.name}: getIt.getOrAsync(';
+              result = '${param.name}: await getIt.getOrAsync(';
             } else {
-              result = 'getIt.getOrAsync(';
+              result = 'await getIt.getOrAsync(';
             }
 
             final ElementAnnotation? elementAnnotation =
@@ -163,13 +163,13 @@ class RutaBuilder implements Builder {
           '// Please add this method to lib/main.dart with the following signature:',
         )
         ..writeln(
-          '// Future<HttpServer> run(Handler Function() handlerCallback, InternetAddress address, int port) {...}',
+          '// Future<HttpServer> run(Future<Handler> Function() handlerCallback, InternetAddress address, int port) {...}',
         )
         ..writeln();
     }
 
     buffer
-      ..writeln('Handler createRouter() {')
+      ..writeln('Future<Handler> createRouter() async {')
       ..writeln('  final router = Router();')
       ..writeln('  try {');
 

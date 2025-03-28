@@ -1,3 +1,7 @@
+## 0.1.7
+
+- Fix: awaiting getOrAsync functions
+
 ## 0.1.6
 
 - Adding support for async instances in getIt

@@ -1,13 +1,13 @@
 name: ruta_generator
 description: Generator for ruta framework
-version: 0.1.6
+version: 0.1.7
 repository: https://github.com/k0zlov/ruta_generator
 
 environment:
   sdk: ^3.5.4
 
 dependencies:
-  ruta: ^0.1.7
+  ruta: ^0.1.8
   build: ^2.4.1
   collection: ^1.19.1
   glob: ^2.1.3
