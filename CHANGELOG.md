@@ -1,3 +1,7 @@
+## 0.1.6
+
+- Adding support for async instances in getIt
+
 ## 0.1.5
 
 - Adding support for @Named arguments in Route constructor

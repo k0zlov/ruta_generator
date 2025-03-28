@@ -88,9 +88,9 @@ class RutaBuilder implements Builder {
             String result;
 
             if (param.isNamed) {
-              result = '${param.name}: getIt(';
+              result = '${param.name}: getIt.getOrAsync(';
             } else {
-              result = 'getIt(';
+              result = 'getIt.getOrAsync(';
             }
 
             final ElementAnnotation? elementAnnotation =
