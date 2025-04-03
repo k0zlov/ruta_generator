@@ -240,18 +240,9 @@ class RutaBuilder implements Builder {
     buffer
       ..writeln('}')
       ..writeln()
-      ..writeln('void main() async {')
-      ..writeln('  getIt.allowReassignment = true;');
-
-    if (hasInit) {
-      buffer.writeln('  await entrypoint.init();');
-    }
-
-    buffer
-      ..writeln()
+      ..writeln('void main(List<String> args) async {')
       ..writeln('  bool isFirstLaunch = true;')
-      ..writeln()
-      ..writeln('  hotReload(() async {')
+      ..writeln('  Future<HttpServer> _start() async {')
       ..writeln(
         "    final port = int.tryParse(Platform.environment['PORT'] ?? '8080') ?? 8080;",
       )
@@ -265,7 +256,26 @@ class RutaBuilder implements Builder {
       ..writeln('      isFirstLaunch = false;')
       ..writeln('    }')
       ..writeln('    return server;')
-      ..writeln('  });')
+      ..writeln('  }')
+      ..writeln()
+      ..writeln('  getIt.allowReassignment = true;');
+
+    if (hasInit) {
+      buffer.writeln('  await entrypoint.init();');
+    }
+
+    buffer
+      ..writeln()
+      ..writeln(
+          "  final bool hotReloadEnabled = args.contains('--hot-reload');")
+      ..writeln()
+      ..writeln('  if (hotReloadEnabled) {')
+      ..writeln('    hotReload(() async {')
+      ..writeln('      return _start();')
+      ..writeln('    });')
+      ..writeln('  } else {')
+      ..writeln('    await _start();')
+      ..writeln('  }')
       ..writeln('}');
 
     final outputId = AssetId(buildStep.inputId.package, '.ruta/server.dart');

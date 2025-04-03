@@ -1,3 +1,7 @@
+## 0.1.8
+
+- Optional hot reload run
+
 ## 0.1.7
 
 - Fix: awaiting getOrAsync functions
