@@ -1,3 +1,7 @@
+## 0.1.9
+
+- Updating dependencies
+
 ## 0.1.8
 
 - Optional hot reload run

@@ -267,7 +267,8 @@ class RutaBuilder implements Builder {
     buffer
       ..writeln()
       ..writeln(
-          "  final bool hotReloadEnabled = args.contains('--hot-reload');")
+        "  final bool hotReloadEnabled = args.contains('--hot-reload');",
+      )
       ..writeln()
       ..writeln('  if (hotReloadEnabled) {')
       ..writeln('    hotReload(() async {')
